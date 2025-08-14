@@ -22,17 +22,35 @@ def get_db_connection():
         password=DB_PASSWORD)
     return conn
 
-@app.route("/")
-def hello_world():  
-    tabelle = "my_table"
+
+@app.route("/zahl")
+def zahl_5():
+    x = 5
+    return x
+
+
+@app.route("/", methods=['GET', 'POST'])
+def todo_list():
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(f"SELECT * FROM {tabelle};")
-    result = cur.fetchall()
-    conn.commit()
+
+    if request.method == "POST":
+        content = request.form.get("aufgabe", "")
+        cur.execute(f"INSERT INTO todo_list (aufgabe) VALUES ('{content}');")
+        conn.commit()
+
+    cur.execute("SELECT aufgabe FROM todo_list;")
+    task = cur.fetchall()
+
+    app.logger.info(task)
+
+    cur.execute("SELECT beendet_am FROM todo_list;")
+    finished = cur.fetchall()
     cur.close()
     conn.close()
-    return f"{result}"
+    return render_template('todo.html', task=task, finished=finished)
+
 
 @app.route("/chatbot/<name>", methods=['GET', 'POST'])
 def chatbot(name):
@@ -64,6 +82,16 @@ if __name__ == "__main__":
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+
+        cur_init.execute("""
+            CREATE TABLE IF NOT EXISTS todo_list (
+                id SERIAL PRIMARY KEY,
+                aufgabe TEXT NOT NULL,
+                erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                beendet_am TIMESTAMP
+            );
+        """)
+
         conn_init.commit()
         cur_init.close()
         conn_init.close()

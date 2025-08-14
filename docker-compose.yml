@@ -1,0 +1,33 @@
+version: '3'
+services:
+  my-postgres: 
+    container_name: my-postgres
+    image: postgres
+    ports: 
+      - "5432:5432"
+    environment: 
+      POSTGRES_PASSWORD: EM:IwltdoM,jnoi
+    networks: 
+      - "chatbot_network"
+
+  my-app:
+    build:
+      context: .
+      dockerfile: Dockerfile  
+    container_name: my-app
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=my-postgres
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=EM:IwltdoM,jnoi
+      - DB_PORT=5432
+    networks:
+      - "chatbot_network"
+
+networks: 
+  chatbot_network:
+    driver: bridge
+
+  
