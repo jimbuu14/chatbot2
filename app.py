@@ -23,29 +23,34 @@ def get_db_connection():
     return conn
 
 
-@app.route("/zahl")
-def zahl_5():
-    x = 5
-    return x
-
-
 @app.route("/", methods=['GET', 'POST'])
 def todo_list():
 
     conn = get_db_connection()
     cur = conn.cursor()
 
-    if request.method == "POST":
-        content = request.form.get("aufgabe", "")
-        cur.execute(f"INSERT INTO todo_list (aufgabe) VALUES ('{content}');")
-        conn.commit()
-
-    cur.execute("SELECT aufgabe FROM todo_list;")
+    cur.execute("SELECT id, aufgabe FROM todo_list;")
     task = cur.fetchall()
 
-    app.logger.info(task)
+    if request.method == "POST":
+        content = request.form.get("aufgabe", "")
+        if content == "":
+            pass
+        else:
+            cur.execute(f"INSERT INTO todo_list (aufgabe) VALUES ('{content}');")
+            conn.commit()
+    
+        aufgaben_ids = [1, 2, 3, 4, 5]
+        for aufgabe_id in aufgaben_ids:
+            checkbox_value = request.form.get(f"state-{ aufgabe_id }", "")
+            if checkbox_value == "":
+                continue           
+            else:                
+                #app.logger.info(f"Inhalt von aufgabe_id: {aufgabe_id}")
+                cur.execute(f"UPDATE todo_list SET erledigt = {checkbox_value} WHERE id = {aufgabe_id};")
+                conn.commit()
 
-    cur.execute("SELECT beendet_am FROM todo_list;")
+    cur.execute("SELECT erledigt FROM todo_list;")
     finished = cur.fetchall()
     cur.close()
     conn.close()
@@ -88,7 +93,8 @@ if __name__ == "__main__":
                 id SERIAL PRIMARY KEY,
                 aufgabe TEXT NOT NULL,
                 erstellt_am TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                beendet_am TIMESTAMP
+                beendet_am TIMESTAMP,
+                erledigt BOOLEAN not null default false
             );
         """)
 
